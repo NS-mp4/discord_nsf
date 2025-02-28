@@ -3,40 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code d'Accès</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-        }
-        h1 {
-            color: #333;
-        }
-        .code {
-            font-size: 24px;
-            font-weight: bold;
-            color: #d9534f;
-            margin: 10px 0;
-        }
-        p {
-            color: #666;
-        }
-    </style>
+    <title>Code de Vérification</title>
 </head>
 <body>
-    <div class="container">
-        <h1>Votre Code d'Accès</h1>
-        <p class="code">{{ code }}</p>
-        <p>Ce code expirera bientôt. Utilisez-le dans Discord avant qu'il ne soit remplacé.</p>
-    </div>
+    <h1>Voici votre code de vérification :</h1>
+    <p id="code">{{ code }}</p> <!-- Affiche le code ici -->
+    <p>Le code change toutes les heures.</p>
+    <script>
+        // Fonction pour générer un code aléatoire de 6 caractères
+        function generateCode() {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return code;
+        }
+
+        // Mettre à jour le code toutes les heures
+        function updateCode() {
+            const code = generateCode();
+            document.getElementById('code').textContent = code;
+        }
+
+        // Mettre à jour le code au chargement
+        window.onload = updateCode;
+
+        // Mettre à jour le code toutes les heures
+        setInterval(updateCode, 3600000); // 3600000ms = 1 heure
+    </script>
 </body>
 </html>
