@@ -3,6 +3,7 @@ import random
 import string
 import time
 import threading
+import datetime
 
 app = Flask(__name__)
 
@@ -16,13 +17,14 @@ def generate_code():
 
 
 def update_code():
-    """Met à jour le code toutes les heures."""
+    """Met à jour le code à chaque début d'heure."""
     while True:
-        # Le temps actuel
-        current_time = time.time()
+        # Obtenir le temps actuel
+        now = datetime.datetime.now()
         
-        # Si nous ne sommes pas encore à l'heure exacte, attendre jusqu'à la prochaine heure
-        time_to_wait = CODE_DURATION - (current_time % CODE_DURATION)
+        # Calculer le temps restant jusqu'à la prochaine heure pleine
+        next_hour = (now + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        time_to_wait = (next_hour - now).total_seconds()
         
         # Affichage du temps d'attente pour le debug
         print(f"Attente de {time_to_wait} secondes avant de mettre à jour le code.")
@@ -32,7 +34,7 @@ def update_code():
         
         # Mise à jour du code
         active_code["value"] = generate_code()
-        active_code["expires_at"] = current_time + CODE_DURATION
+        active_code["expires_at"] = time.time() + CODE_DURATION
         print(f"Nouveau code généré : {active_code['value']} (Expire dans 1 heure)")
 
 @app.route('/')
