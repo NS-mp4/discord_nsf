@@ -8,7 +8,8 @@ app = Flask(__name__)
 
 # Dictionnaire pour stocker le code et son expiration
 active_code = {"value": None, "expires_at": None}
-CODE_DURATION = 3600  # Durée de validité du code en secondes (1 heure)
+CODE_DURATION = 300  # Durée de validité en secondes (5 minutes)
+
 
 def generate_code():
     """Génère un code aléatoire à 6 caractères."""
@@ -16,15 +17,12 @@ def generate_code():
 
 
 def update_code():
-    """Met à jour le code périodiquement toutes les heures."""
+    """Met à jour le code périodiquement."""
     while True:
-        # On attend le délai restant avant la prochaine heure
-        time.sleep(CODE_DURATION - time.time() % CODE_DURATION)
-        
-        # Mise à jour du code
         active_code["value"] = generate_code()
         active_code["expires_at"] = time.time() + CODE_DURATION
-        print(f"Nouveau code généré : {active_code['value']} (Expire dans {CODE_DURATION // 60} minutes)")
+        print(f"Nouveau code généré : {active_code['value']} (Expire dans {CODE_DURATION} sec)")
+        time.sleep(CODE_DURATION)
 
 
 @app.route('/')
