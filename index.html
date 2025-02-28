@@ -1,150 +1,63 @@
-<!DOCTYPE html>
-<html lang="fr">
+from flask import Flask, render_template, jsonify
+import random
+import string
+import time
+import threading
+import datetime
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Vérification de Code</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+app = Flask(__name__)
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #111;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            flex-direction: column;
-        }
+# Dictionnaire pour stocker le code et son expiration
+active_code = {"value": None, "expires_at": None}
+CODE_DURATION = 3600  # Durée de validité du code en secondes (1 heure)
 
-        h1, p {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+def generate_code():
+    """Génère un code aléatoire à 6 caractères."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
-        h1 {
-            font-size: 3rem;
-            color: #e60000;
-            text-shadow: 0 0 5px #e60000, 0 0 10px #e60000, 0 0 20px #e60000;
-        }
 
-        p {
-            font-size: 1.2rem;
-            color: #bbb;
-            margin-bottom: 30px;
-            text-shadow: 0 0 5px #e60000, 0 0 10px #e60000;
-        }
+def update_code():
+    """Met à jour le code à chaque début d'heure."""
+    while True:
+        # Obtenir le temps actuel
+        now = datetime.datetime.now()
+        
+        # Calculer le temps restant jusqu'à la prochaine heure pleine
+        next_hour = (now + datetime.timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        time_to_wait = (next_hour - now).total_seconds()
+        
+        # Affichage du temps d'attente pour le debug
+        print(f"Attente de {time_to_wait} secondes avant de mettre à jour le code.")
+        
+        # Attente jusqu'à la prochaine heure
+        time.sleep(time_to_wait)
+        
+        # Mise à jour du code
+        active_code["value"] = generate_code()
+        active_code["expires_at"] = time.time() + CODE_DURATION
+        print(f"Nouveau code généré : {active_code['value']} (Expire dans 1 heure)")
 
-        .container {
-            background-color: #1a1a1a;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 600px;
-            text-align: center;
-            border: 2px solid #e60000;
-        }
+@app.route('/')
+def index():
+    """Page principale affichant le code actuel."""
+    return render_template('index.html', code=active_code["value"])
 
-        .button {
-            background-color: transparent;
-            border: 2px solid #e60000;
-            color: #e60000;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease-in-out;
-            text-decoration: none;
-            display: inline-block;
-        }
 
-        .button:hover {
-            background-color: #e60000;
-            color: #111;
-            transform: scale(1.1);
-        }
+@app.route('/api/verify/<code>', methods=['GET'])
+def verify_code(code):
+    """Vérifie si un code est valide."""
+    if active_code["value"] == code and time.time() < active_code["expires_at"]:
+        return jsonify({"valid": True})
+    return jsonify({"valid": False})
 
-        .code {
-            font-size: 2rem;
-            font-weight: 600;
-            margin: 20px 0;
-            color: #e60000;
-            text-shadow: 0 0 5px #e60000, 0 0 10px #e60000;
-        }
 
-        footer {
-            position: absolute;
-            bottom: 10px;
-            color: #bbb;
-            font-size: 14px;
-            text-align: center;
-        }
+# Lancer le thread pour mettre à jour le code en arrière-plan
+threading.Thread(target=update_code, daemon=True).start()
 
-        footer a {
-            color: #e60000;
-            text-decoration: none;
-        }
-    </style>
-</head>
+if __name__ == '__main__':
+    # On démarre le serveur Flask sur le port 5000
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
-<body>
-
-    <header>
-        <h1>Vérification de Code</h1>
-    </header>
-
-    <div class="container">
-        <p>Bienvenue, voici ton code de vérification !</p>
-        <div class="code" id="verification-code"></div>
-
-        <!-- Bouton pour copier le code -->
-        <button class="button" id="copy-btn">Copier le Code</button>
-    </div>
-
-    <footer>
-        <p>&copy; 2025 Ton Nom.</p>
-    </footer>
-
-    <script>
-        // Fonction pour générer un code de vérification aléatoire
-        function generateCode() {
-            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 8; i++) {
-                code += characters.charAt(Math.floor(Math.random() * characters.length));
-            }
-            return code;
-        }
-
-        // Affiche le code généré sur la page
-        document.getElementById('verification-code').textContent = generateCode();
-
-        // Fonction pour copier le code dans le presse-papier
-        document.getElementById('copy-btn').addEventListener('click', function() {
-            const codeText = document.getElementById('verification-code').textContent;
-            const textArea = document.createElement('textarea');
-            textArea.value = codeText;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-
-            alert('Code copié dans le presse-papier : ' + codeText);
-        });
-    </script>
-
-</body>
-
-</html>
+<!-- Start of ouo.io banner code -->
+<a href="http://ouo.io/ref/wdj1KGuu"><img src="http://ouo.io/images/banners/r1.jpg" title="ouo.io - Make short links and earn the biggest money" /></a>
+<!-- End of ouo.io banner code -->
