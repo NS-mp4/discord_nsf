@@ -1,46 +1,34 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, jsonify
 import random
 import string
 import time
-import threading
 
 app = Flask(__name__)
 
-# Dictionnaire pour stocker le code et son expiration
-active_code = {"value": None, "expires_at": None}
-CODE_DURATION = 300  # Durée de validité en secondes (5 minutes)
+# Dictionnaire pour stocker les codes temporaires
+codes = {}
 
+@app.route("/")
+def home():
+    return "Bienvenue sur mon site de vérification !"
 
+@app.route("/api/generate_code", methods=["GET"])
 def generate_code():
-    """Génère un code aléatoire à 6 caractères."""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    """Génère un code unique et le rend valable pendant 10 minutes."""
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    expiration_time = time.time() + 600  # Code valable pendant 10 minutes
+    codes[code] = expiration_time
+    return jsonify({"code": code, "expires_in": 600})
 
-
-def update_code():
-    """Met à jour le code périodiquement."""
-    while True:
-        active_code["value"] = generate_code()
-        active_code["expires_at"] = time.time() + CODE_DURATION
-        print(f"Nouveau code généré : {active_code['value']} (Expire dans {CODE_DURATION} sec)")
-        time.sleep(CODE_DURATION)
-
-
-@app.route('/')
-def index():
-    """Page principale affichant le code actuel."""
-    return render_template('index.html', code=active_code["value"])
-
-
-@app.route('/api/verify/<code>', methods=['GET'])
+@app.route("/api/verify_code/<code>", methods=["GET"])
 def verify_code(code):
-    """Vérifie si un code est valide."""
-    if active_code["value"] == code and time.time() < active_code["expires_at"]:
-        return jsonify({"valid": True})
+    """Vérifie si le code est valide et non expiré."""
+    if code in codes:
+        if time.time() < codes[code]:  # Si le code n'est pas expiré
+            return jsonify({"valid": True})
+        else:
+            del codes[code]  # Supprimer le code expiré
     return jsonify({"valid": False})
 
-
-# Lancer le thread pour mettre à jour le code en arrière-plan
-threading.Thread(target=update_code, daemon=True).start()
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
