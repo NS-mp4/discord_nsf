@@ -16,14 +16,20 @@ def generate_code():
 
 
 def update_code():
-    """Met à jour le code une fois par heure."""
+    """Met à jour le code toutes les heures."""
     while True:
+        # Le temps actuel
         current_time = time.time()
-        # Attente jusqu'à la prochaine heure pile
+        
+        # Si nous ne sommes pas encore à l'heure exacte, attendre jusqu'à la prochaine heure
         time_to_wait = CODE_DURATION - (current_time % CODE_DURATION)
+        
+        # Affichage du temps d'attente pour le debug
         print(f"Attente de {time_to_wait} secondes avant de mettre à jour le code.")
+        
+        # Attente jusqu'à la prochaine heure
         time.sleep(time_to_wait)
-
+        
         # Mise à jour du code
         active_code["value"] = generate_code()
         active_code["expires_at"] = current_time + CODE_DURATION
