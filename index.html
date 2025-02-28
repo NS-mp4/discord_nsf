@@ -109,11 +109,12 @@
         <p>Bienvenue, voici ton code de vérification !</p>
         <div class="code" id="verification-code"></div>
 
-        <a href="https://ton-lien-de-verification.com" class="button">Accéder au site et vérifier le code</a>
+        <!-- Bouton pour copier le code -->
+        <button class="button" id="copy-btn">Copier le Code</button>
     </div>
 
     <footer>
-        <p>&copy; 2025 Ton Nom. <a href="#">Conditions d'utilisation</a> | <a href="#">Politique de confidentialité</a></p>
+        <p>&copy; 2025 Ton Nom.</p>
     </footer>
 
     <script>
@@ -129,6 +130,19 @@
 
         // Affiche le code généré sur la page
         document.getElementById('verification-code').textContent = generateCode();
+
+        // Fonction pour copier le code dans le presse-papier
+        document.getElementById('copy-btn').addEventListener('click', function() {
+            const codeText = document.getElementById('verification-code').textContent;
+            const textArea = document.createElement('textarea');
+            textArea.value = codeText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            alert('Code copié dans le presse-papier : ' + codeText);
+        });
     </script>
 
 </body>
