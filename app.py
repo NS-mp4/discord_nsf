@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify
 import random
 import string
 import time
@@ -10,7 +10,6 @@ app = Flask(__name__)
 active_code = {"value": None, "expires_at": None}
 CODE_DURATION = 3600  # Durée de validité du code en secondes (1 heure)
 
-
 def generate_code():
     """Génère un code aléatoire à 6 caractères."""
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -19,10 +18,13 @@ def generate_code():
 def update_code():
     """Met à jour le code périodiquement toutes les heures."""
     while True:
+        # On attend le délai restant avant la prochaine heure
+        time.sleep(CODE_DURATION - time.time() % CODE_DURATION)
+        
+        # Mise à jour du code
         active_code["value"] = generate_code()
         active_code["expires_at"] = time.time() + CODE_DURATION
         print(f"Nouveau code généré : {active_code['value']} (Expire dans {CODE_DURATION // 60} minutes)")
-        time.sleep(CODE_DURATION)  # Attendre 1 heure avant de générer un nouveau code
 
 
 @app.route('/')
