@@ -8,8 +8,7 @@ app = Flask(__name__)
 
 # Dictionnaire pour stocker le code et son expiration
 active_code = {"value": None, "expires_at": None}
-CODE_DURATION = 300  # Durée de validité en secondes (5 minutes)
-
+CODE_DURATION = 3600  # Durée de validité du code en secondes (1 heure)
 
 def generate_code():
     """Génère un code aléatoire à 6 caractères."""
@@ -17,13 +16,18 @@ def generate_code():
 
 
 def update_code():
-    """Met à jour le code périodiquement."""
+    """Met à jour le code une fois par heure."""
     while True:
-        active_code["value"] = generate_code()
-        active_code["expires_at"] = time.time() + CODE_DURATION
-        print(f"Nouveau code généré : {active_code['value']} (Expire dans {CODE_DURATION} sec)")
-        time.sleep(CODE_DURATION)
+        current_time = time.time()
+        # Attente jusqu'à la prochaine heure pile
+        time_to_wait = CODE_DURATION - (current_time % CODE_DURATION)
+        print(f"Attente de {time_to_wait} secondes avant de mettre à jour le code.")
+        time.sleep(time_to_wait)
 
+        # Mise à jour du code
+        active_code["value"] = generate_code()
+        active_code["expires_at"] = current_time + CODE_DURATION
+        print(f"Nouveau code généré : {active_code['value']} (Expire dans 1 heure)")
 
 @app.route('/')
 def index():
@@ -43,4 +47,5 @@ def verify_code(code):
 threading.Thread(target=update_code, daemon=True).start()
 
 if __name__ == '__main__':
+    # On démarre le serveur Flask sur le port 5000
     app.run(host='0.0.0.0', port=5000, debug=True)
